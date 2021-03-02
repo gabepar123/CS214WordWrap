@@ -3,6 +3,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "ww.h"
 
 int isDirectory(char *name){
@@ -23,18 +25,37 @@ int isDirectory(char *name){
 
 }
 
+int wrap(char * filename, int width){
+
+    //TODO: figure out why bytes_read doesn't work.
+    //TODO: actually format the file properly
+    int bytes_read=0;
+    char* buf = malloc(sizeof(char)*width);
+    int f = open(filename, O_RDONLY);
+    //if you can't open the file, return failure
+    if(f==-1)
+        return 1;
+
+    bytes_read = read(f,&buf,width);
+
+    close(f);
+    free(buf);
+    return 0;
+}
+
 int main(int argc, char* argv[]){
 
-    if(argc!=2)
+    //Check if proper arguments are given. If it is not 3 (ex: [./ww 80]), then return with EXIT_FAILURE.
+    if(argc!=3)
         return EXIT_FAILURE;
 
     //if argv is a directory, word wrap all the files in it
-    //TODO: change argv[1] -> argv[2]
+    //TODO: change argv[1] -> argv[2] [FIXED by broteam/iman]
     //TODO: check if this works with paths
-   if (isDirectory(argv[1])) {
+   if (isDirectory(argv[2])) {
        puts("dir");
        //Now we find all the files besides "."/".."
-       DIR *dirp = (opendir(argv[1]));
+       DIR *dirp = (opendir(argv[2]));
       // struct dirent *de;
        //TODO: replace d_type with the use of stat()
       /* 
@@ -46,6 +67,11 @@ int main(int argc, char* argv[]){
     */
        closedir(dirp);
    }
+
+   //get width  
+   int width = atoi(argv[1]);
+   //wrap with file name and width
+   wrap(argv[2],width); 
    
    return EXIT_SUCCESS;
 }
