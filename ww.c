@@ -23,9 +23,10 @@ int isDirectory(char *name){
 
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
 
+    if(argc!=2)
+        return EXIT_FAILURE;
 
     //if argv is a directory, word wrap all the files in it
     //TODO: change argv[1] -> argv[2]
