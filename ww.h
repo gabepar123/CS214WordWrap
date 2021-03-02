@@ -1,1 +1,1 @@
-int printTest(int x);
+int isDirectory(char *name);
