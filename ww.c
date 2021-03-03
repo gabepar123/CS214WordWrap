@@ -56,15 +56,15 @@ int main(int argc, char* argv[]){
        puts("dir");
        //Now we find all the files besides "."/".."
        DIR *dirp = (opendir(argv[2]));
-      // struct dirent *de;
+       struct dirent *de;
        //TODO: replace d_type with the use of stat()
-      /* 
+       //test line
         while ((de = readdir(dirp)) != NULL) {
             if (de->d_type == DT_REG) {
                 printf("%s\n", de->d_name);
            }
        }
-    */
+    
        closedir(dirp);
    }
 
