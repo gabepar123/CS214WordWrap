@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "ww.h"
 
-//#define DT_REG 8
+//TODO: Error check all file openings, mallocs, and basically anything else that can go wrong (if needed)
 
 //determines if the file in the directory starts with '.' or "wrap."
 //if it does we DO NOT word wrap it
