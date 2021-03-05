@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "ww.h"
 
 //TODO: Error check all file openings, mallocs, and basically anything else that can go wrong (if needed)
@@ -59,20 +60,51 @@ int isDirectory(char *name){
 
 }
 
-int wrap(char * filename, int width){
+int wrap(int fin, int fout, unsigned width){
 
-    //TODO: figure out why bytes_read doesn't work.
-    //TODO: actually format the file properly
-    int bytes_read = 0;
-    char* buf = malloc(sizeof(char)*width);
-    int f = open(filename, O_RDONLY);
-    //if you can't open the file, return failure
-    if(f == -1)
-        return 1;
+    int bytes_read;
+    char* buf = malloc(sizeof(char)*(width/2));
+    bytes_read = read(fin,&buf,(width/2));
 
-    bytes_read = read(f,&buf,width);
+    //TODO: make this algo run throughout the whole file, and not the first (width/2) bytes.
+    int i;
+    int started=0;
+    int startIndex=0;
+    int endIndex=0;
+    int totalBytes=0;
+    //while(fin!=EOF){
+        for(i=0;i<width/2;i++){
+            if(totalBytes>=width){
+                //TODO: write in a new line after every x bytes
+                //if the amount we read is equal/greater than the amount we want to wrap, then break
+                break;
+            }
+            //if it is a space, then we know the word has ended
+            if(isspace(buf[i])){
+                //set the last index of the word
+                endIndex=i-1;
+                //write it to the output file
+                write(fout, &buf[startIndex], (startIndex+endIndex)-1);
+                //say that we did not start at a word
+                started=0;
+            }
+            else{
+                if(started==0){
+                    startIndex=i;
+                    started=1;
+                }
+            }
+            totalBytes++;
+        }
+        //if we are in a word right now but the buffer has ended, stash it
+        //TODO: stash the end of a buffer properly
+        if(started==1){
 
-    close(f);
+        }
+    //}
+   
+    //write(fout, &buf[startIndex], (startIndex+endIndex)-1);
+
     free(buf);
     return 0;
 }
@@ -102,7 +134,7 @@ int main(int argc, char* argv[]){
    }
 /*
    //get width  
-   int width = atoi(argv[1]);
+   unsigned width = atoi(argv[1]);
    //wrap with file name and width
    wrap(argv[2],width); 
 */ 
