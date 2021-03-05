@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "ww.h"
 
-#define DT_REG 8
+//#define DT_REG 8
 
 //determines if the file in the directory starts with '.' or "wrap."
 //if it does we DO NOT word wrap it
@@ -30,12 +30,15 @@ char* createFileName(char fileName[], char* path){
     
     int newFileLength = prefixLength + fileNameLength + pathFileLength;
     
-    char* newFileName = malloc((newFileLength * sizeof(char)));
-    memcpy(newFileName, prefix, prefixLength);
-    memcpy(newFileName+prefixLength, fileName, fileNameLength);
-    memcpy(newFileName+prefixLength+fileNameLength, path, pathFileLength);
+    strbuf_t newFileName;
+    sb_init(&newFileName, newFileLength);
+    sb_concat(&newFileName, path);
+    sb_append(&newFileName, '/');
+    sb_concat(&newFileName, prefix);
+    sb_concat(&newFileName, fileName);
 
-    return newFileName;
+
+    return newFileName.data;
 }
 
 int isDirectory(char *name){
@@ -81,21 +84,17 @@ int main(int argc, char* argv[]){
         return EXIT_FAILURE;
 
     //if argv is a directory, word wrap all the files in it
-    //TODO: check if this works with paths
    if (isDirectory(argv[2])) {
        DIR *dirp = (opendir(argv[2]));
        struct dirent *de;
-       //TODO: replace d_type with the use of stat()
         while ((de = readdir(dirp)) != NULL) {
             //We check if the file is a regular file, and does not start with "." or "wrap."
             if (de->d_type == DT_REG && ignoreFileName(de->d_name)) {
-              // char* newFileName = createFileName(de->d_name, argv[2]);
-              // free(newFileName);
-               // char pathFile[100];
-               // sprintf(pathFile, "%s/wraptest", argv[2]);
-               // int fd = open(pathFile, O_CREAT);
-               printf("%s\n", createFileName(de->d_name, argv[2]));
-               
+                char* newFileName = createFileName(de->d_name, argv[2]);
+                //S_IRWXU gives file owner all perms, may need to change this
+                int fd = open(newFileName, O_CREAT, S_IRWXU);
+                free(newFileName);
+                //TODO: this is the point where we call wordwrap(fd,...,...)
            }
        }
     
