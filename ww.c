@@ -65,14 +65,14 @@ int wrap(int fin, int fout, unsigned width){
     int bytes_read;
     strbuf_t buf;
     strbuf_t temp;
-    char* e = malloc(sizeof(char)*(width/2)+1);
     sb_init(&buf,width/2);
     sb_init(&temp,width/2);
-    bytes_read = read(fin,e,(width/2));
+    bytes_read = read(fin,buf.data,(width/2));
 
     //TODO: make this algo run throughout the whole file, and not the first (width/2) bytes.
     int i;
     int started=0;
+    int startedSpace=1;
     int startIndex=0;
     int wordBytes=0;
     int totalBytes=0;
@@ -165,7 +165,6 @@ int main(int argc, char* argv[]){
                 wrap(fin,fout,width);
            }
        }
-
        closedir(dirp);
    }
    else{
@@ -173,7 +172,6 @@ int main(int argc, char* argv[]){
       int fout = 1;
       wrap(fin,fout,width);
    }
-
 
    return EXIT_SUCCESS;
 }

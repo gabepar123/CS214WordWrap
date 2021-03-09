@@ -24,7 +24,7 @@ int sb_init(strbuf_t *L, size_t length)
     if (!L->data) return 1;
 
     L->length = length;
-    L->used   = 1;
+    L->used   = 0;
 
     //L->data[0] = '\0';
     return 0;
@@ -49,7 +49,7 @@ int sb_append(strbuf_t *L, char item)
 
     //strbuf is guarenteed to end with NULL-terminator
     //get replace NULL-terminator with item, and add null terminator at the end
-    L->data[L->used-1] = item;
+    L->data[L->used] = item;
     //L->data[L->used] = '\0';
     ++L->used;
 
