@@ -136,6 +136,7 @@ int wrap(int fin, int fout, unsigned width){
 int main(int argc, char* argv[]){
 
     //Check if proper arguments are given. If it is not 3 (ex: [./ww 80]), then return with EXIT_FAILURE.
+    //TODO: argc can be 2 since we can take input from stdio
     if(argc != 3)
         return EXIT_FAILURE;
 
@@ -144,22 +145,28 @@ int main(int argc, char* argv[]){
 
     //if argv is a directory, word wrap all the files in it
    if (isDirectory(argv[2])) {
-       DIR *dirp = (opendir(argv[2]));
-       struct dirent *de;
+        DIR *dirp = (opendir(argv[2]));
+        struct dirent *de;
+        //TODO: chdir kind makes createFileName() redundant, might change since chdir is safer
+        chdir(argv[2]);
         while ((de = readdir(dirp)) != NULL) {
             //We check if the file is a regular file, and does not start with "." or "wrap."
             if (de->d_type == DT_REG && ignoreFileName(de->d_name)) {
+                //Open the input file
+                int fin = open(de->d_name, O_RDONLY);
+                //create wrap. file name
                 char* newFileName = createFileName(de->d_name, argv[2]);
                 //S_IRWXU gives file owner all perms, may need to change this
-                int fd = open(newFileName, O_CREAT, S_IRWXU);
+                //Output file (wrap.foo)
+                int fout = open(newFileName, O_CREAT | O_RDWR, S_IRWXU);
                 free(newFileName);
-                //TODO: this is the point where we call wordwrap(fd,...,...)
-                wrap(,fd,width);
+        
+              //  wrap(fin,fout,width);
            }
        }
-    
        closedir(dirp);
    }
+
 
    return EXIT_SUCCESS;
 }
