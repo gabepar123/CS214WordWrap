@@ -63,11 +63,12 @@ int isDirectory(char *name){
 int wrap(int fin, int fout, unsigned width){
 
     int bytes_read;
-    strbuf_t* buf;
-    strbuf_t* temp;
-    sb_init(buf,width/2);
-    sb_init(temp,width/2);
-    bytes_read = read(fin,&buf->data,(width/2));
+    strbuf_t buf;
+    strbuf_t temp;
+    char* e = malloc(sizeof(char)*(width/2)+1);
+    sb_init(&buf,width/2);
+    sb_init(&temp,width/2);
+    bytes_read = read(fin,e,(width/2));
 
     //TODO: make this algo run throughout the whole file, and not the first (width/2) bytes.
     int i;
@@ -84,9 +85,9 @@ int wrap(int fin, int fout, unsigned width){
                 break;
             }
             //if it is a space, then we know the word has ended
-            if(isspace(buf->data[i])){
+            if(isspace(buf.data[i])){
                 //write it to the output file
-                write(fout, &buf->data[startIndex], wordBytes);
+                write(fout, buf.data+startIndex, wordBytes);
                 //say that we did not start at a word
                 started=0;
                 //clear about of wordBytes
@@ -112,24 +113,24 @@ int wrap(int fin, int fout, unsigned width){
             int x = startIndex;
             //temp is the rest of the word in the buffer
             for(j=0;j<wordBytes;++j){
-                sb_append(temp,buf->data[x]);
+                sb_append(&temp,buf.data[x]);
                 ++x;
             }
         }
-        sb_destroy(buf);
-        sb_init(buf,width/2);
-        bytes_read = read(fin,&buf->data,(width/2));
+        sb_destroy(&buf);
+        sb_init(&buf,width/2);
+        bytes_read = read(fin,&buf.data,(width/2));
         int k;
         for(k=0;k<wordBytes;++k){
-            sb_append(buf,temp->data[k]);
+            sb_append(&buf,temp.data[k]);
         }
-        sb_destroy(temp);
-        sb_init(temp,width/2);
+        sb_destroy(&temp);
+        sb_init(&temp,width/2);
 
     }//end of file reading
 
-    sb_destroy(buf);
-    sb_destroy(temp);
+    sb_destroy(&buf);
+    sb_destroy(&temp);
     return 0;
 }
 
@@ -161,10 +162,16 @@ int main(int argc, char* argv[]){
                 int fout = open(newFileName, O_CREAT | O_RDWR, S_IRWXU);
                 free(newFileName);
         
-              //  wrap(fin,fout,width);
+                wrap(fin,fout,width);
            }
        }
+
        closedir(dirp);
+   }
+   else{
+      int fin = open(argv[2], O_RDONLY);
+      int fout = 1;
+      wrap(fin,fout,width);
    }
 
 
