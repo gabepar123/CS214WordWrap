@@ -65,11 +65,11 @@ int wrap(int fin, int fout, unsigned width){
     int bytes_read;
     strbuf_t buf;
     strbuf_t temp;
-    sb_init(&buf,width/2);
-    sb_init(&temp,width/2);
-    bytes_read = read(fin,buf.data,(width/2));
+    sb_init(&buf,10);
+    sb_init(&temp,10);
+    bytes_read = read(fin,buf.data,10);
 
-    //TODO: make this algo run throughout the whole file, and not the first (width/2) bytes.
+    //TODO: make this algo run throughout the whole file, and not the first 10 bytes.
     int i;
     int totalBytes=0;
     while(bytes_read!=0){
@@ -77,12 +77,19 @@ int wrap(int fin, int fout, unsigned width){
         int started=0;
         int startedSpace=0;
         int wordBytes=0;
-        for(i=0;i<width/2;++i){
+        for(i=0;i<10;++i){
             
             //if it is a space, then we know the word has ended
             if(isspace(buf.data[i])){
-                //write previous content to the output file
-                write(fout, buf.data+startIndex, wordBytes);
+                if(wordBytes>width){//the word that we are writing is longer than the width allowed
+                    write(fout, buf.data+startIndex, wordBytes);
+                    write(fout,"\n",1);
+                    //return EXIT_FAILURE;
+                }
+                else{
+                    //write previous content to the output file
+                    write(fout, buf.data+startIndex, wordBytes);
+                }
                 //say that we did not start at a word
                 started=0;
                 //clear about of wordBytes
@@ -138,20 +145,22 @@ int wrap(int fin, int fout, unsigned width){
             }
         }
         sb_destroy(&buf);
-        sb_init(&buf,width/2);
+        sb_init(&buf,10);
         int k;
         for(k=0;k<wordBytes;++k){
             sb_append(&buf,temp.data[k]);
         }
-        bytes_read = read(fin,buf.data+temp.used,(width/2)-(temp.used));
+        bytes_read = read(fin,buf.data+temp.used,10-(temp.used));
         if(started==1||startedSpace==1)
             totalBytes-=temp.used;
+
+        buf.used+=bytes_read;
         
-        if(totalBytes<=width&&bytes_read==0)
-            write(fout, buf.data,totalBytes-1);
+        //if(buf.used!=10)
+        //    write(fout, buf.data,buf.used);
 
         sb_destroy(&temp);
-        sb_init(&temp,width/2);
+        sb_init(&temp,10);
 
     }//end of file reading
 
