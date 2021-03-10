@@ -1,6 +1,6 @@
 int isDirectory(char *name);
 int ignoreFileName(char name[]);
-char* createFileName(char fileName[], char* path);
+char* createFileName(char fileName[]);
 
 //This part of the strbuf library from Assignment #2
 typedef struct {

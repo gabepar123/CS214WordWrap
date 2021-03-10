@@ -20,38 +20,36 @@ int ignoreFileName(char name[]){
     }
     return 1;
 }
-//TODO: Finish and clean up this function
-char* createFileName(char fileName[], char* path){
+
+char* createFileName(char fileName[]){
     //create the new file name with the "wrap." prefix
     char* prefix = "wrap.";
     
     int prefixLength = strlen(prefix);
     int fileNameLength = strlen(fileName);
-    int pathFileLength = strlen(path);
-    
-    int newFileLength = prefixLength + fileNameLength + pathFileLength;
-    
-    strbuf_t newFileName;
-    sb_init(&newFileName, newFileLength);
-    sb_concat(&newFileName, path);
-    sb_append(&newFileName, '/');
-    sb_concat(&newFileName, prefix);
-    sb_concat(&newFileName, fileName);
+  
+    int newFileLength = prefixLength + fileNameLength + 1;
+    char* newFileName = malloc(newFileLength * sizeof(char));
 
+    strcpy(newFileName, prefix);
+    strcat(newFileName, fileName);
 
-    return newFileName.data;
+    return newFileName;
 }
 
 int isDirectory(char *name){
     struct stat data;
 
-    int error = stat(name, &data);
     
+    /*
     //check for errors
+    int error = stat(name, &data);
     if (error){
         perror(name);
         return 0;
     }
+    */
+
     //check if argv is a directory
     if (S_ISDIR(data.st_mode)){
         return 1;
@@ -172,41 +170,53 @@ int wrap(int fin, int fout, unsigned width){
 
 int main(int argc, char* argv[]){
 
-    //Check if proper arguments are given. If it is not 3 (ex: [./ww 80]), then return with EXIT_FAILURE.
+    //Check if proper arguments are given. If it is > 3 , then return with EXIT_FAILURE.
     //TODO: argc can be 2 since we can take input from stdio
-    if(argc != 3)
+    if(argc > 3)
         return EXIT_FAILURE;
-
+        
     //get width  
     unsigned width = atoi(argv[1]);
+    
+    //If there is only 2 arguments, we read from stdin
+    if (argc == 2){
+        int fin = 0;
+        int fout = 1;
+        wrap(fin,fout,width);
+        //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
+        return EXIT_SUCCESS;
+    }
 
     //if argv is a directory, word wrap all the files in it
    if (isDirectory(argv[2])) {
         DIR *dirp = (opendir(argv[2]));
         struct dirent *de;
-        //TODO: chdir kind makes createFileName() redundant, might change since chdir is safer
         chdir(argv[2]);
         while ((de = readdir(dirp)) != NULL) {
             //We check if the file is a regular file, and does not start with "." or "wrap."
             if (de->d_type == DT_REG && ignoreFileName(de->d_name)) {
                 //Open the input file
                 int fin = open(de->d_name, O_RDONLY);
+                if (fin == -1){ perror(de->d_name); return EXIT_FAILURE;}
                 //create wrap. file name
-                char* newFileName = createFileName(de->d_name, argv[2]);
-                //S_IRWXU gives file owner all perms, may need to change this
+                char* newFileName = createFileName(de->d_name);
+                //0600 gives rw------
                 //Output file (wrap.foo)
-                int fout = open(newFileName, O_CREAT | O_RDWR, S_IRWXU);
+                int fout = open(newFileName, O_RDWR|O_TRUNC|O_CREAT, 0600);
+                if (fout == -1){ perror(newFileName); return EXIT_FAILURE;}
                 free(newFileName);
-        
                 wrap(fin,fout,width);
+                //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
            }
        }
        closedir(dirp);
    }
-   else{
-      int fin = open(argv[2], O_RDONLY);
+   else {
+      int fin = open(argv[2], O_RDONLY); 
+      if (fin == -1){ perror(argv[2]); return EXIT_FAILURE;}
       int fout = 1;
       wrap(fin,fout,width);
+      //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
    }
 
    return EXIT_SUCCESS;
