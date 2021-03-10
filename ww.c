@@ -71,30 +71,43 @@ int wrap(int fin, int fout, unsigned width){
 
     //TODO: make this algo run throughout the whole file, and not the first (width/2) bytes.
     int i;
-    int started=0;
-    int startedSpace=1;
-    int startIndex=0;
-    int wordBytes=0;
     int totalBytes=0;
     while(bytes_read!=0){
+        int startIndex=0;
+        int started=0;
+        int startedSpace=0;
+        int wordBytes=0;
         for(i=0;i<width/2;++i){
-            if(totalBytes>=width){
-                //TODO: write in a new line after every x bytes
-                write(fout,"\n",1);
-                //if the amount we read is equal/greater than the amount we want to wrap, then break
-                break;
-            }
+            
             //if it is a space, then we know the word has ended
             if(isspace(buf.data[i])){
-                //write it to the output file
+                //write previous content to the output file
                 write(fout, buf.data+startIndex, wordBytes);
                 //say that we did not start at a word
                 started=0;
                 //clear about of wordBytes
                 wordBytes=0;
+                //check if its a new line
+                if(buf.data[i]=='\n'||buf.data[i]=='\t'){
+                    buf.data[i]=' ';
+                }
+                //check if we in a space chunk
+                if(startedSpace==0){
+                    startIndex=i;
+                    wordBytes=1;
+                    startedSpace=1;
+                }
+                else{//in middle of space chunk
+                    wordBytes++;
+                }
+                //totalBytes++;
             }
             else{//if not a space, check if we are in the middle of a word
+                
                 if(started==0){//not in the middle of a word
+                    if(totalBytes!=wordBytes)
+                        write(fout, buf.data+startIndex,wordBytes);
+                    startedSpace=0;
                     startIndex=i;
                     wordBytes=1;
                     started=1;
@@ -104,11 +117,18 @@ int wrap(int fin, int fout, unsigned width){
                 }
             }
             totalBytes++;
+            if(totalBytes>=width){
+                //TODO: write in a new line after every x bytes
+                write(fout,"\n",1);
+                //if the amount we read is equal/greater than the amount we want to wrap, then break and change totalBytes
+                totalBytes=wordBytes;
+                //break;
+            }
         }//end of buffer reading
         //if we are in a word right now but the buffer has ended, stash it
         //TODO: stash the end of a buffer properly
         //TODO: re-read bytes (outside if statement)
-        if(started==1){
+        if(started==1||startedSpace==1){
             int j;
             int x = startIndex;
             //temp is the rest of the word in the buffer
@@ -119,11 +139,17 @@ int wrap(int fin, int fout, unsigned width){
         }
         sb_destroy(&buf);
         sb_init(&buf,width/2);
-        bytes_read = read(fin,&buf.data,(width/2));
         int k;
         for(k=0;k<wordBytes;++k){
             sb_append(&buf,temp.data[k]);
         }
+        bytes_read = read(fin,buf.data+temp.used,(width/2)-(temp.used));
+        if(started==1||startedSpace==1)
+            totalBytes-=temp.used;
+        
+        if(totalBytes<=width&&bytes_read==0)
+            write(fout, buf.data,totalBytes-1);
+
         sb_destroy(&temp);
         sb_init(&temp,width/2);
 
@@ -131,6 +157,7 @@ int wrap(int fin, int fout, unsigned width){
 
     sb_destroy(&buf);
     sb_destroy(&temp);
+    write(fout,"\n",1);
     return 0;
 }
 
