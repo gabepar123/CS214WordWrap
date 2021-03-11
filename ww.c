@@ -12,7 +12,6 @@
 
 //determines if the file in the directory starts with '.' or "wrap."
 //if it does we DO NOT word wrap it
-//TODO: Test this more incase there is bugs with varying file name sizes
 int ignoreFileName(char name[]){
 
     if (name[0] == '.' || strncmp("wrap.", name, strlen("wrap.")) == 0){
@@ -67,8 +66,11 @@ int wrap(int fin, int fout, unsigned width){
     sb_init(&temp,10);
     bytes_read = read(fin,buf.data,10);
 
-    if(bytes_read==0)
+    if(bytes_read==0){
+        sb_destroy(&buf);
+        sb_destroy(&temp);
         return 0;
+    }
 
     int i;
     int totalBytes=0;
@@ -178,7 +180,6 @@ int wrap(int fin, int fout, unsigned width){
 int main(int argc, char* argv[]){
 
     //Check if proper arguments are given. If it is > 3 , then return with EXIT_FAILURE.
-    //TODO: argc can be 2 since we can take input from stdio
     if(argc > 3)
         return EXIT_FAILURE;
         
