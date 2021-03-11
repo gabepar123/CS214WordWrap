@@ -62,6 +62,8 @@ int wrap(int fin, int fout, unsigned width){
     int bytes_read;
     strbuf_t buf;
     strbuf_t temp;
+    strbuf_t words;
+    sb_init(&words,width);
     sb_init(&buf,10);
     sb_init(&temp,10);
     bytes_read = read(fin,buf.data,10);
@@ -92,14 +94,18 @@ int wrap(int fin, int fout, unsigned width){
                 }
                 else{
                     //write previous content to the output file
-                    write(fout, buf.data+startIndex, wordBytes);
+                    //write(fout, buf.data+startIndex, wordBytes);
+                    int x;
+                    for(x=0;x<wordBytes;++x){
+                        sb_append(&words,buf.data[startIndex+x]);
+                    }
                 }
                 //say that we did not start at a word
                 started=0;
                 //clear about of wordBytes
                 wordBytes=0;
                 //check if its a new line
-                if(buf.data[i]=='\n'||buf.data[i]=='\t'){
+                if((buf.data[i]=='\t'||buf.data[i]=='\n')&&totalBytes!=0){//if the char is a tab and it isnt the first char in the line, make it a space
                     buf.data[i]=' ';
                 }
                 //check if we in a space chunk
@@ -111,13 +117,17 @@ int wrap(int fin, int fout, unsigned width){
                 else{//in middle of space chunk
                     wordBytes++;
                 }
-                //totalBytes++;
             }
             else{//if not a space, check if we are in the middle of a word
                 
                 if(started==0){//not in the middle of a word
-                    if(totalBytes!=wordBytes)
-                        write(fout, buf.data+startIndex,wordBytes);
+                    if(totalBytes!=wordBytes){
+                        //write(fout, buf.data+startIndex,wordBytes);
+                        int x;
+                        for(x=0;x<wordBytes;++x){
+                            sb_append(&words,buf.data[startIndex+x]);
+                        }
+                    }
                     startedSpace=0;
                     startIndex=i;
                     wordBytes=1;
@@ -129,10 +139,17 @@ int wrap(int fin, int fout, unsigned width){
             }
             totalBytes++;
             if(totalBytes>=width){
-                write(fout,"\n",1);
+                while(words.used>0&&words.data[words.used-1]==' '){
+                    --words.used;
+                }
+                if(words.used!=0){
+                    write(fout,words.data,words.used);
+                    write(fout,"\n",1);
+                }
+                sb_destroy(&words);
+                sb_init(&words,width);
                 //if the amount we read is equal/greater than the amount we want to wrap, then break and change totalBytes
                 totalBytes=wordBytes;
-                //break;
             }
         }//end of buffer reading
         //if we are in a word right now but the buffer has ended, stash it
@@ -160,6 +177,7 @@ int wrap(int fin, int fout, unsigned width){
         buf.used+=bytes_read;
         
         if(bytes_read==0){
+            write(fout,words.data,words.used);
             write(fout,buf.data,correctBytes);
         }
 
@@ -170,6 +188,7 @@ int wrap(int fin, int fout, unsigned width){
 
     sb_destroy(&buf);
     sb_destroy(&temp);
+    sb_destroy(&words);
     write(fout,"\n",1);
     if(tooBig==1)
         return 1;
@@ -230,6 +249,5 @@ int main(int argc, char* argv[]){
       if(w==1)
         return EXIT_FAILURE;
    }
-
    return EXIT_SUCCESS;
 }
