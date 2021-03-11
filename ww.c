@@ -64,9 +64,9 @@ int wrap(int fin, int fout, unsigned width){
     strbuf_t temp;
     strbuf_t words;
     sb_init(&words,width);
-    sb_init(&buf,10);
-    sb_init(&temp,10);
-    bytes_read = read(fin,buf.data,10);
+    sb_init(&buf,15);
+    sb_init(&temp,15);
+    bytes_read = read(fin,buf.data,15);
 
     if(bytes_read==0){
         sb_destroy(&buf);
@@ -80,10 +80,10 @@ int wrap(int fin, int fout, unsigned width){
     int correctBytes=0;
     while(bytes_read!=0){
         int startIndex=0;
-        int started=0;
+        int startedWord=0;
         int startedSpace=0;
         int wordBytes=0;
-        for(i=0;i<10;++i){
+        for(i=0;i<15;++i){
             //if it is a space, then we know the word has ended
             if(isspace(buf.data[i])){
                 if(wordBytes>width){//the word that we are writing is longer than the width allowed
@@ -98,17 +98,22 @@ int wrap(int fin, int fout, unsigned width){
                     for(x=0;x<wordBytes;++x){
                         sb_append(&words,buf.data[startIndex+x]);
                     }
+                    wordBytes=0;
+                    startedWord=0;
                 }
+
+                
+                
                 //say that we did not start at a word
-                started=0;
                 //clear about of wordBytes
-                wordBytes=0;
+                
                 //check if its a new line
-                if((buf.data[i]=='\t'||buf.data[i]=='\n')&&totalBytes!=0){//if the char is a tab and it isnt the first char in the line, make it a space
-                    buf.data[i]=' ';
-                }
+                //if((buf.data[i]=='\t'||buf.data[i]=='\n')&&totalBytes!=0){//if the char is a tab and it isnt the first char in the line, make it a space
+                //    buf.data[i]=' ';
+                //}
+                
                 //check if we in a space chunk
-                if(startedSpace==0){
+                if(startedSpace==0){//not in space chunk
                     startIndex=i;
                     wordBytes=1;
                     startedSpace=1;
@@ -119,9 +124,15 @@ int wrap(int fin, int fout, unsigned width){
             }
             else{//if not a space, check if we are in the middle of a word
                 
-                if(started==0){//not in the middle of a word
+                if(startedWord==0){//not in the middle of a word, starting a new word
                     if(totalBytes!=wordBytes){
                         //write(fout, buf.data+startIndex,wordBytes);
+
+                        //check if its just one space in our space chunk
+                        if(wordBytes==1){
+                            if(buf.data[i-1]=='\n'||buf.data[i-1]=='\t')
+                                buf.data[i-1]=' ';
+                        }
                         int x;
                         for(x=0;x<wordBytes;++x){
                             sb_append(&words,buf.data[startIndex+x]);
@@ -130,7 +141,7 @@ int wrap(int fin, int fout, unsigned width){
                     startedSpace=0;
                     startIndex=i;
                     wordBytes=1;
-                    started=1;
+                    startedWord=1;
                 }
                 else{//in middle of word
                     wordBytes++;
@@ -143,7 +154,7 @@ int wrap(int fin, int fout, unsigned width){
                     for(x=0;x<wordBytes;++x){
                         sb_append(&words,buf.data[startIndex+x]);
                     }
-                    started=0;
+                    startedWord=0;
                     wordBytes=0;
                     startIndex=i+1;
                 }
@@ -151,6 +162,7 @@ int wrap(int fin, int fout, unsigned width){
                     --words.used;
                 }
                 if(words.used!=0){
+                    
                     write(fout,words.data,words.used);
                     write(fout,"\n",1);
                 }
@@ -162,7 +174,7 @@ int wrap(int fin, int fout, unsigned width){
         }//end of buffer reading
         //if we are in a word right now but the buffer has ended, stash it
         correctBytes=buf.used;
-        if(started==1||startedSpace==1){
+        if(startedWord==1||startedSpace==1){
             int j;
             int x = startIndex;
             //temp is the rest of the word in the buffer
@@ -173,13 +185,13 @@ int wrap(int fin, int fout, unsigned width){
         }
 
         sb_destroy(&buf);
-        sb_init(&buf,10);
+        sb_init(&buf,15);
         int k;
         for(k=0;k<wordBytes;++k){
                 sb_append(&buf,temp.data[k]);
         }
-        bytes_read = read(fin,buf.data+temp.used,10-(temp.used));
-        if(started==1||startedSpace==1)
+        bytes_read = read(fin,buf.data+temp.used,15-(temp.used));
+        if(startedWord==1||startedSpace==1)
             totalBytes-=temp.used;
 
         buf.used+=bytes_read;
@@ -190,7 +202,7 @@ int wrap(int fin, int fout, unsigned width){
         }
 
         sb_destroy(&temp);
-        sb_init(&temp,10);
+        sb_init(&temp,15);
 
     }//end of file reading
 
@@ -212,6 +224,9 @@ int main(int argc, char* argv[]){
         
     //get width  
     unsigned width = atoi(argv[1]);
+
+    if(width==0)
+        return EXIT_FAILURE;
     
     //If there is only 2 arguments, we read from stdin
     if (argc == 2){
