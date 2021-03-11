@@ -84,7 +84,6 @@ int wrap(int fin, int fout, unsigned width){
         int startedSpace=0;
         int wordBytes=0;
         for(i=0;i<10;++i){
-            
             //if it is a space, then we know the word has ended
             if(isspace(buf.data[i])){
                 if(wordBytes>width){//the word that we are writing is longer than the width allowed
@@ -139,6 +138,15 @@ int wrap(int fin, int fout, unsigned width){
             }
             totalBytes++;
             if(totalBytes>=width){
+                if((i<9&&buf.data[1+i]==' ')){
+                    int x;
+                    for(x=0;x<wordBytes;++x){
+                        sb_append(&words,buf.data[startIndex+x]);
+                    }
+                    started=0;
+                    wordBytes=0;
+                    startIndex=i+1;
+                }
                 while(words.used>0&&words.data[words.used-1]==' '){
                     --words.used;
                 }
