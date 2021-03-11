@@ -50,8 +50,9 @@ int sb_append(strbuf_t *L, char item)
     //strbuf is guarenteed to end with NULL-terminator
     //get replace NULL-terminator with item, and add null terminator at the end
     L->data[L->used] = item;
-    //L->data[L->used] = '\0';
+    
     ++L->used;
+    //L->data[L->used] = '\0';
 
     return 0;
 }

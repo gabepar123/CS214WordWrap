@@ -67,10 +67,13 @@ int wrap(int fin, int fout, unsigned width){
     sb_init(&temp,10);
     bytes_read = read(fin,buf.data,10);
 
-    //TODO: make this algo run throughout the whole file, and not the first 10 bytes.
+    if(bytes_read==0)
+        return 0;
+
     int i;
     int totalBytes=0;
     int tooBig = 0;
+    int correctBytes=0;
     while(bytes_read!=0){
         int startIndex=0;
         int started=0;
@@ -84,7 +87,6 @@ int wrap(int fin, int fout, unsigned width){
                     tooBig = 1;
                     write(fout, buf.data+startIndex, wordBytes);
                     write(fout,"\n",1);
-                    //return EXIT_FAILURE;
                 }
                 else{
                     //write previous content to the output file
@@ -125,7 +127,6 @@ int wrap(int fin, int fout, unsigned width){
             }
             totalBytes++;
             if(totalBytes>=width){
-                //TODO: write in a new line after every x bytes
                 write(fout,"\n",1);
                 //if the amount we read is equal/greater than the amount we want to wrap, then break and change totalBytes
                 totalBytes=wordBytes;
@@ -133,8 +134,7 @@ int wrap(int fin, int fout, unsigned width){
             }
         }//end of buffer reading
         //if we are in a word right now but the buffer has ended, stash it
-        //TODO: stash the end of a buffer properly
-        //TODO: re-read bytes (outside if statement)
+        correctBytes=buf.used;
         if(started==1||startedSpace==1){
             int j;
             int x = startIndex;
@@ -144,11 +144,12 @@ int wrap(int fin, int fout, unsigned width){
                 ++x;
             }
         }
+
         sb_destroy(&buf);
         sb_init(&buf,10);
         int k;
         for(k=0;k<wordBytes;++k){
-            sb_append(&buf,temp.data[k]);
+                sb_append(&buf,temp.data[k]);
         }
         bytes_read = read(fin,buf.data+temp.used,10-(temp.used));
         if(started==1||startedSpace==1)
@@ -156,8 +157,9 @@ int wrap(int fin, int fout, unsigned width){
 
         buf.used+=bytes_read;
         
-        //if(buf.used!=10)
-        //    write(fout, buf.data,buf.used);
+        if(bytes_read==0){
+            write(fout,buf.data,correctBytes);
+        }
 
         sb_destroy(&temp);
         sb_init(&temp,10);
@@ -169,7 +171,7 @@ int wrap(int fin, int fout, unsigned width){
     write(fout,"\n",1);
     if(tooBig==1)
         return 1;
-        
+
     return 0;
 }
 
@@ -187,8 +189,10 @@ int main(int argc, char* argv[]){
     if (argc == 2){
         int fin = 0;
         int fout = 1;
-        wrap(fin,fout,width);
-        //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
+        int w3=wrap(fin,fout,width);
+        if(w3==1)
+            return EXIT_FAILURE;
+ 
         return EXIT_SUCCESS;
     }
 
@@ -213,7 +217,6 @@ int main(int argc, char* argv[]){
                 int w2 = wrap(fin,fout,width);
                 if(w2==1)
                     return EXIT_FAILURE;
-                //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
            }
        }
        closedir(dirp);
@@ -225,7 +228,6 @@ int main(int argc, char* argv[]){
       int w = wrap(fin,fout,width);
       if(w==1)
         return EXIT_FAILURE;
-      //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
    }
 
    return EXIT_SUCCESS;
