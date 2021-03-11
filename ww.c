@@ -40,7 +40,7 @@ char* createFileName(char fileName[]){
 int isDirectory(char *name){
     struct stat data;
 
-    
+    stat(name, &data);
     /*
     //check for errors
     int error = stat(name, &data);
