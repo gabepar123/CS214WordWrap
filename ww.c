@@ -70,6 +70,7 @@ int wrap(int fin, int fout, unsigned width){
     //TODO: make this algo run throughout the whole file, and not the first 10 bytes.
     int i;
     int totalBytes=0;
+    int tooBig = 0;
     while(bytes_read!=0){
         int startIndex=0;
         int started=0;
@@ -80,6 +81,7 @@ int wrap(int fin, int fout, unsigned width){
             //if it is a space, then we know the word has ended
             if(isspace(buf.data[i])){
                 if(wordBytes>width){//the word that we are writing is longer than the width allowed
+                    tooBig = 1;
                     write(fout, buf.data+startIndex, wordBytes);
                     write(fout,"\n",1);
                     //return EXIT_FAILURE;
@@ -165,6 +167,9 @@ int wrap(int fin, int fout, unsigned width){
     sb_destroy(&buf);
     sb_destroy(&temp);
     write(fout,"\n",1);
+    if(tooBig==1)
+        return 1;
+        
     return 0;
 }
 
@@ -205,7 +210,9 @@ int main(int argc, char* argv[]){
                 int fout = open(newFileName, O_RDWR|O_TRUNC|O_CREAT, 0600);
                 if (fout == -1){ perror(newFileName); return EXIT_FAILURE;}
                 free(newFileName);
-                wrap(fin,fout,width);
+                int w2 = wrap(fin,fout,width);
+                if(w2==1)
+                    return EXIT_FAILURE;
                 //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
            }
        }
@@ -215,7 +222,9 @@ int main(int argc, char* argv[]){
       int fin = open(argv[2], O_RDONLY); 
       if (fin == -1){ perror(argv[2]); return EXIT_FAILURE;}
       int fout = 1;
-      wrap(fin,fout,width);
+      int w = wrap(fin,fout,width);
+      if(w==1)
+        return EXIT_FAILURE;
       //TODO: check return value of wrap to determine exit_success for EXIT_FAILURE
    }
 
