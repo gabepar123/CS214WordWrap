@@ -78,7 +78,6 @@ int wrap(int fin, int fout, unsigned width){
     int i;
     int totalBytes=0;
     int tooBig = 0;
-    //int correctBytes=0;
     while(bytes_read!=0){
         int startIndex=0;
         int startedWord=0;
@@ -114,7 +113,6 @@ int wrap(int fin, int fout, unsigned width){
                 int catch=0;
                 if(startedWord==0){//not in the middle of a word, starting a new word
                     if(totalBytes!=wordBytes){
-                        //write(fout, buf.data+startIndex,wordBytes);
                         //check if its just one space in our space chunk
                         if(wordBytes==1){
                             if(buf.data[i-1]=='\n'||buf.data[i-1]=='\t')
@@ -171,18 +169,6 @@ int wrap(int fin, int fout, unsigned width){
             }
             totalBytes++;
             if(totalBytes>=width){
-                if(i==buf.used-1){
-                   /* if(!isalpha(buf.data[i+1])||!isdigit(buf.data[i+1])){
-                        int x;
-                        for(x=0;x<wordBytes;++x){
-                            sb_append(&words,buf.data[startIndex+x]);
-                        }
-                        startedWord=0;
-                        wordBytes=0;
-                        startIndex=i+1;
-                    }*/
-                }
-
                 if((i<19&&(buf.data[1+i]==' '||buf.data[1+1]=='\n'))){
                     int x;
                     for(x=0;x<wordBytes;++x){
@@ -192,12 +178,14 @@ int wrap(int fin, int fout, unsigned width){
                     wordBytes=0;
                     startIndex=i+1;
                 }
+                
                 while(words.used>0&&words.data[words.used-1]==' '){
                     --words.used;
                 }
                 if(words.used!=0){
                     write(fout,words.data,words.used);
-                    write(fout,"\n",1);
+                    if(words.data[words.used-1]!='\n')
+                        write(fout,"\n",1);
                 }
                 sb_destroy(&words);
                 sb_init(&words,width);
@@ -206,7 +194,6 @@ int wrap(int fin, int fout, unsigned width){
             }
         }//end of buffer reading
         //if we are in a word right now but the buffer has ended, stash it
-        //correctBytes=buf.used;
         if(startedWord==1||startedSpace==1){
             int j;
             int x = startIndex;
@@ -237,7 +224,6 @@ int wrap(int fin, int fout, unsigned width){
                     write(fout,&buf.data[z],1);
                 }
             }
-            //write(fout,buf.data,correctBytes);
         }
 
         sb_destroy(&temp);
@@ -248,8 +234,7 @@ int wrap(int fin, int fout, unsigned width){
     sb_destroy(&buf);
     sb_destroy(&temp);
     sb_destroy(&words);
-    //if(newLined==0)
-        write(fout,"\n",1);
+    write(fout,"\n",1);
     if(tooBig==1)
         return 1;
 
