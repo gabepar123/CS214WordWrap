@@ -89,8 +89,10 @@ int wrap(int fin, int fout, unsigned width){
             if(isspace(buf.data[i])){
                 if(wordBytes>width){//the word that we are writing is longer than the width allowed
                     tooBig = 1;
-                    write(fout, buf.data+startIndex, wordBytes);
-                    write(fout,"\n",1);
+                    if(i>0&&buf.data[i-1]=='\n'){
+                        write(fout, buf.data+startIndex, wordBytes);
+                        write(fout,"\n",1);
+                    }
                 }
                 
                 //check if we in a space chunk
@@ -126,8 +128,10 @@ int wrap(int fin, int fout, unsigned width){
                             
                             for(n=startIndex;n<wordBytes+startIndex;++n){
                                 if(buf.data[n]=='\n'){
-                                    if(indexOfFirstNewLine==-1)
+                                    if(indexOfFirstNewLine==-1){
                                         indexOfFirstNewLine=n;
+                                        continue;
+                                    }
                                     if(indexOfFirstNewLine!=-1&&indexOfSecondNewLine==-1)
                                         indexOfSecondNewLine=n;
                                     if(indexOfFirstNewLine!=-1&&indexOfSecondNewLine!=-1)
@@ -179,7 +183,7 @@ int wrap(int fin, int fout, unsigned width){
                     }*/
                 }
 
-                if((i<19&&buf.data[1+i]==' ')){
+                if((i<19&&(buf.data[1+i]==' '||buf.data[1+1]=='\n'))){
                     int x;
                     for(x=0;x<wordBytes;++x){
                         sb_append(&words,buf.data[startIndex+x]);
