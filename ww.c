@@ -268,7 +268,7 @@ int main(int argc, char* argv[]){
     if(width==0)
         return EXIT_FAILURE;
     
-    //If there is only 2 arguments, we read from stdin
+    //If there is only 2 arguments, we read from stdin, and output to stdout
     if (argc == 2){
         int fin = 0;
         int fout = 1;
@@ -281,6 +281,7 @@ int main(int argc, char* argv[]){
 
     //if argv is a directory, word wrap all the files in it
    if (isDirectory(argv[2])) {
+        int error = 0;
         DIR *dirp = (opendir(argv[2]));
         struct dirent *de;
         chdir(argv[2]);
@@ -298,17 +299,25 @@ int main(int argc, char* argv[]){
                 if (fout == -1){ perror(newFileName); return EXIT_FAILURE;}
                 free(newFileName);
                 int w2 = wrap(fin,fout,width);
-                if(w2==1)
-                    return EXIT_FAILURE;
+                close(fin);
+                close(fout);
+                //checks if one of the files returned an error, but allows all the files to be wrapped
+                if(w2 == 1)
+                    error = 1;
            }
+                
        }
        closedir(dirp);
+       if (error == 1)
+        return EXIT_FAILURE;
    }
+   //Read from file, output to stdout
    else {
       int fin = open(argv[2], O_RDONLY); 
       if (fin == -1){ perror(argv[2]); return EXIT_FAILURE;}
       int fout = 1;
       int w = wrap(fin,fout,width);
+      close(fout);
       if(w==1)
         return EXIT_FAILURE;
    }
