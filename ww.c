@@ -67,11 +67,20 @@ int wrap(int fin, int fout, unsigned width){
     sb_init(&buf,20);
     sb_init(&temp,20);
     bytes_read = read(fin,buf.data,20);
-    buf.used=bytes_read;
+    buf.used=bytes_read;  
 
     if(bytes_read==0){
         sb_destroy(&buf);
         sb_destroy(&temp);
+        return 0;
+    }
+
+    if(bytes_read<20&&bytes_read==width){
+        write(fout,buf.data,bytes_read);
+        write(fout,"\n",1);
+        sb_destroy(&buf);
+        sb_destroy(&temp);
+        sb_destroy(&words);
         return 0;
     }
 
